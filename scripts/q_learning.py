@@ -6,7 +6,7 @@ import os
 from q_learning_project.msg import QLearningReward
 from q_learning_project.msg import RobotMoveDBToBlock
 import random
-## from QMatrix.msg import QMatrix
+from q_learning_project.msg import QMatrix
 # import messages. 
 
 
@@ -44,7 +44,7 @@ class QLearning(object):
         ))
 
         # publish the current matrix 
-        ## self.matrix_pub = rospy.Publisher("/q_learning/q_matrix", QMatrix, queue_size=10)
+        self.matrix_pub = rospy.Publisher("/q_learning/q_matrix", QMatrix, queue_size=10)
         self.reward_sub = rospy.Subscriber("/q_learning/reward", QLearningReward, self.update_q) # how do I make this give me different values
         self.execute_pub = rospy.Publisher("/q_learning/robot_action" , RobotMoveDBToBlock, queue_size=10)
 
@@ -63,24 +63,46 @@ class QLearning(object):
 
         # Initialize q-table values to 0
         self.Q = np.zeros((len(self.states), len(self.actions)))
-        self.state = 0 
+        self.current_state = 0
+        self.next_state = 0 
 
-        print("actions", self.actions)
-        print("states", self.states)
+        self.MyMove = RobotMoveDBToBlock()
+
+        ##print("actions", self.actions)
+        ##print("states", self.states)
         ##print("action_matrix", self.action_matrix[0][12])
 
 
     ### Q LOGIC: how do we choose what state to start in? 
     # while ()
         # 
-    # Q[state, action] = Q[state, action] + alpha * (self.reward_sub??  + gamma * np.max(Q[new_state, :]) — Q[state, action])
+    # Q[state, action] = Q[state, a ction] + alpha * (self.reward_sub??  + gamma * np.max(Q[new_state, :]) — Q[state, action])
 
     # -> how do we know the new state? 
     
     def update_q(self, data):
-        self.reward = data.reward
-        pass 
-        ## self.execute_pub
+
+        print("hello")
+        self.Q[self.current_state, self.action] = self.Q[self.current_state, self.action] + alpha * (data.reward  + gamma * int(np.max(self.Q[self.new_state, :])) - self.Q[self.current_state, self.action])
+        Q_anon = serialize_q_matrix(self.Q)
+        self.execute_pub.publish(Q_anon)
+        self.current_state = self.new_state
+        # pick random and publish
+        self.next_state, self.action = self.random_action(self.action_matrix[current_state])
+        ## MyMove = RobotMoveDBToBlock()
+        self.MyMove.robot_db = self.actions[int(self.action)]['dumbbell']
+        self.MyMove.block_id = self.actions[int(self.action)]['block']
+        self.execute_pub.publish(self.MyMove)
+
+    def serialize_q_matrix(Q):
+        # takes a numpy q anon and turns it into the proper msg type to be published
+        Q_anon = QMatrix()
+        Q_row = QMatrixRow()
+        for i in range(len(Q)):
+            Q_row = QMatrixRow()
+            Q_row.q_matrix_row = Q[i]
+            Q_anon.q_matrix[i] = Q_row
+        return Q_anon
 
     def random_action(self, row):
         viable = [] 
@@ -90,16 +112,16 @@ class QLearning(object):
         return random.choice(viable)
 
     def run(self):
-        print(self.action_matrix[0])
-        state, action = self.random_action(self.action_matrix[0])
-        print (self.actions[int(action)])
+        print(self.action_matrix[self.current_state])
+        self.next_state, self.action = self.random_action(self.action_matrix[self.current_state])
+        ## print (self.actions[int(action)])
         ## print (self.states[state])
         ## print(state, action)
 
-        MyMove = RobotMoveDBToBlock()
-        MyMove.robot_db = self.actions[int(action)]['dumbbell']
-        MyMove.block_id = self.actions[int(action)]['block']
-        self.execute_pub.publish(MyMove)
+        
+        self.MyMove.robot_db = self.actions[int(self.action)]['dumbbell']
+        self.MyMove.block_id = self.actions[int(self.action)]['block']
+        self.execute_pub.publish(self.MyMove)
 
     def save_q_matrix(self):
         # TODO: You'll want to save your q_matrix to a file once it is done to
