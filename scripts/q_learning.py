@@ -65,6 +65,7 @@ class QLearning(object):
         self.Q = np.zeros((len(self.states), len(self.actions)))
         self.current_state = 0
         self.next_state = 0 
+        self.q_count = 0
 
         self.MyMove = RobotMoveDBToBlock()
 
@@ -82,9 +83,11 @@ class QLearning(object):
     
     def update_q(self, data):
 
-        print("hello")
+        if self.q_convergence:
+            self.save_q_matrix
+            exit()
         self.Q[self.current_state, self.action] = self.Q[self.current_state, self.action] + alpha * (data.reward  + gamma * int(np.max(self.Q[self.new_state, :])) - self.Q[self.current_state, self.action])
-        Q_anon = serialize_q_matrix(self.Q)
+        Q_anon = self.serialize_q_matrix()
         self.execute_pub.publish(Q_anon)
         self.current_state = self.new_state
         # pick random and publish
@@ -94,13 +97,20 @@ class QLearning(object):
         self.MyMove.block_id = self.actions[int(self.action)]['block']
         self.execute_pub.publish(self.MyMove)
 
-    def serialize_q_matrix(Q):
+    def q_convergence(self):
+        if self.q_count > 10:
+            return 1
+        else: 
+            self.q_count += 1
+            return 0
+
+    def serialize_q_matrix(self):
         # takes a numpy q anon and turns it into the proper msg type to be published
         Q_anon = QMatrix()
         Q_row = QMatrixRow()
-        for i in range(len(Q)):
+        for i in range(len(self.Q)):
             Q_row = QMatrixRow()
-            Q_row.q_matrix_row = Q[i]
+            Q_row.q_matrix_row = self.Q[i]
             Q_anon.q_matrix[i] = Q_row
         return Q_anon
 
@@ -112,13 +122,11 @@ class QLearning(object):
         return random.choice(viable)
 
     def run(self):
-        print(self.action_matrix[self.current_state])
+        ## print(self.action_matrix[self.current_state])
         self.next_state, self.action = self.random_action(self.action_matrix[self.current_state])
         ## print (self.actions[int(action)])
         ## print (self.states[state])
-        ## print(state, action)
-
-        
+        ## print(state, action) 
         self.MyMove.robot_db = self.actions[int(self.action)]['dumbbell']
         self.MyMove.block_id = self.actions[int(self.action)]['block']
         self.execute_pub.publish(self.MyMove)
@@ -126,7 +134,10 @@ class QLearning(object):
     def save_q_matrix(self):
         # TODO: You'll want to save your q_matrix to a file once it is done to
         # avoid retraining
-        return
+        for i in self.Q:
+            for j in self.Q[i]:
+                print(" " + j + " ")
+            print("\n")
 
 if __name__ == "__main__":
     node = QLearning()
