@@ -18,4 +18,8 @@
     * Navigation: Implemented and testing by May 7th
     * Putting it together/overall testing: Up to May 10th  
 
+# Writeup
+
+## Code Organization
+
 
