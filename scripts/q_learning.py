@@ -52,6 +52,7 @@ class QLearning(object):
 
         self.test_pub = rospy.Publisher("/cmd_vel", Twist, queue_size =10)
 
+        rospy.sleep(3)
         # Fetch states. There are 64 states. Each row index corresponds to the
         # state number, and the value is a list of 3 items indicating the positions
         # of the red, green, blue dumbbells respectively.
@@ -126,9 +127,9 @@ class QLearning(object):
         ## print(state, action) 
         self.MyMove.robot_db = self.actions[int(self.action)]['dumbbell']
         self.MyMove.block_id = self.actions[int(self.action)]['block']
-        print(type(self.MyMove))
+        ## print(type(self.MyMove))
         self.execute_pub.publish(self.MyMove)
-        ##rospy.sleep(2)
+        rospy.sleep(2)
 
     def save_q_matrix(self):
         print("save_the_q")
@@ -142,7 +143,7 @@ class QLearning(object):
 if __name__ == "__main__":
     print("execute")
     node = QLearning()
-    #node.run()
-    test = Twist(linear = Vector3(0,0,0), angular = Vector3(0,0,0))
-    node.test_pub.publish(test)
-    rospy.sleep(5)
+    node.run()
+    # test = Twist(linear = Vector3(0,0,0), angular = Vector3(0,0,0))
+    # node.test_pub.publish(test)
+    ## rospy.sleep(5)
