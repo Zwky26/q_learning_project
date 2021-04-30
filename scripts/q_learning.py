@@ -7,6 +7,8 @@ from q_learning_project.msg import QLearningReward
 from q_learning_project.msg import RobotMoveDBToBlock
 import random
 from q_learning_project.msg import QMatrix
+from geometry_msgs.msg import Twist, Vector3
+
 # import messages. 
 
 
@@ -48,6 +50,7 @@ class QLearning(object):
         self.reward_sub = rospy.Subscriber("/q_learning/reward", QLearningReward, self.update_q) # how do I make this give me different values
         self.execute_pub = rospy.Publisher("/q_learning/robot_action" , RobotMoveDBToBlock, queue_size=10)
 
+        self.test_pub = rospy.Publisher("/cmd_vel", Twist, queue_size =10)
 
         # Fetch states. There are 64 states. Each row index corresponds to the
         # state number, and the value is a list of 3 items indicating the positions
@@ -123,7 +126,9 @@ class QLearning(object):
         ## print(state, action) 
         self.MyMove.robot_db = self.actions[int(self.action)]['dumbbell']
         self.MyMove.block_id = self.actions[int(self.action)]['block']
+        print(type(self.MyMove))
         self.execute_pub.publish(self.MyMove)
+        ##rospy.sleep(2)
 
     def save_q_matrix(self):
         print("save_the_q")
@@ -137,4 +142,7 @@ class QLearning(object):
 if __name__ == "__main__":
     print("execute")
     node = QLearning()
-    node.run()
+    #node.run()
+    test = Twist(linear = Vector3(0,0,0), angular = Vector3(0,0,0))
+    node.test_pub.publish(test)
+    rospy.sleep(5)
