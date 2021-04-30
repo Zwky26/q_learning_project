@@ -48,8 +48,6 @@ class QLearning(object):
         self.reward_sub = rospy.Subscriber("/q_learning/reward", QLearningReward, self.update_q) # how do I make this give me different values
         self.execute_pub = rospy.Publisher("/q_learning/robot_action" , RobotMoveDBToBlock, queue_size=10)
 
-        # Where is the logic of the while loop carried out? In a callback function, or a different sort of function 
-
 
         # Fetch states. There are 64 states. Each row index corresponds to the
         # state number, and the value is a list of 3 items indicating the positions
@@ -72,17 +70,10 @@ class QLearning(object):
         ##print("actions", self.actions)
         ##print("states", self.states)
         ##print("action_matrix", self.action_matrix[0][12])
-
-
-    ### Q LOGIC: how do we choose what state to start in? 
-    # while ()
-        # 
-    # Q[state, action] = Q[state, a ction] + alpha * (self.reward_sub??  + gamma * np.max(Q[new_state, :]) — Q[state, action])
-
-    # -> how do we know the new state? 
     
-    def update_q(self, data):
+    def update_q(self, data): # Main logic occurs here, as the rostopic subscriber gets updates to reward values
 
+        print("update_q")
         if self.q_convergence:
             self.save_q_matrix
             exit()
@@ -98,6 +89,7 @@ class QLearning(object):
         self.execute_pub.publish(self.MyMove)
 
     def q_convergence(self):
+        print("q_convergence")
         if self.q_count > 10:
             return 1
         else: 
@@ -106,8 +98,8 @@ class QLearning(object):
 
     def serialize_q_matrix(self):
         # takes a numpy q anon and turns it into the proper msg type to be published
+        print("serialize_the_q")
         Q_anon = QMatrix()
-        Q_row = QMatrixRow()
         for i in range(len(self.Q)):
             Q_row = QMatrixRow()
             Q_row.q_matrix_row = self.Q[i]
@@ -115,13 +107,15 @@ class QLearning(object):
         return Q_anon
 
     def random_action(self, row):
+        print("random_action")
         viable = [] 
         for i in range(len(row)):
             if row[i] != -1:
                 viable.append((i,row[i]))
         return random.choice(viable)
 
-    def run(self):
+    def run(self): #First iteration of selecting the random action. All subsequent selections happen in the callback 
+        print("run!")
         ## print(self.action_matrix[self.current_state])
         self.next_state, self.action = self.random_action(self.action_matrix[self.current_state])
         ## print (self.actions[int(action)])
@@ -132,6 +126,7 @@ class QLearning(object):
         self.execute_pub.publish(self.MyMove)
 
     def save_q_matrix(self):
+        print("save_the_q")
         # TODO: You'll want to save your q_matrix to a file once it is done to
         # avoid retraining
         for i in self.Q:
@@ -140,5 +135,6 @@ class QLearning(object):
             print("\n")
 
 if __name__ == "__main__":
+    print("execute")
     node = QLearning()
     node.run()
