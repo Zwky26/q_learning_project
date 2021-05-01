@@ -120,7 +120,7 @@ class PhantomRobotMovement(object):
 
 
     def prepare_to_take_robot_action(self, data):
-        print(data)
+        # print(data)
         self.robot_action_queue.append(RobotAction(data.robot_db, data.block_id))
 
 
