@@ -22,4 +22,7 @@
 
 ## Code Organization
 
+Because the code is scattered across multiple files, outlines here. 
+
+* Q_Learning file: We initialize with the proper subscribers and publishers, and define a Q-matrix according to the fixed actions included. For the node, every x seconds we do the same procedure. Check if the Q-matrix has converged. If yes, save the matrix to a csv and exit. Otherwise, we pick a random action to be tested. We update the qmatrix using the reward and our new state from the action matrix and repeat. We have a property "waiting" so that the publishing step and the updating step don't overlap. 
 
