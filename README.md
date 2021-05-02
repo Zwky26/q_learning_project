@@ -1,7 +1,6 @@
 # q_learning_project Jonah Kaye Zack Wang 
 
-## Implementation Plan (Rough Draft)
-
+## Implementation Plan 
 * Q-learning algorithm
     * Executing the Q-learning algorithm: Almost identical to in lecture 10, we define a matrix with rows for each state, and columns for each action (64 by 9). We will start in state 0, and pick a random action. We use the same algorithm from lecture 10 to update the matrix. In order to test it, we can manually calculate a single trajectory, starting from the blank Q-matrix, and see if that single step matches the computer execution. More robustly, we can take the Q-matrix at any time, specify a trajectory, and then compare the results of the program and calculate by hand. 
     * Determining when the Q-matrix has converged: To check that it has converged, we can do a test-run, where we start at the origin and do a large number of actions. We keep a running sum of the magnitude of changes. Should this magnitude exceed a set threshold, we know that it is not done converging. To test this, we take the Q-matrix that is deemed 'converged' by the program and randomly check the result from a state and an action. Basically, we select a state at random, and a valid action for that state at random: if the matrix is converged, the update step for this action should not change any Q-value (significantly). 
