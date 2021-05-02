@@ -7,23 +7,22 @@ from q_learning_project.msg import QLearningReward
 from q_learning_project.msg import RobotMoveDBToBlock
 import random
 from q_learning_project.msg import QMatrix
-from geometry_msgs.msg import Twist, Vector3
-
 # import messages. 
 
 
 # Path of directory on where this file is located
-path_prefix = "/home/jonahkaye/catkin_ws/src/q_learning_project/scripts" + "/action_states/"
+path_prefix = os.path.dirname(__file__) + "/action_states/"
 print(path_prefix)
 
 class QLearning(object):
     def __init__(self):
+        ''' Defines publisher to qmatrix and subscriber to reward.
+        Also makes blank qmatrix'''
         # Initialize this node
         rospy.init_node("q_learning")
 
-        alpha = 1 
-        gamma = 0.5 
-        
+        #alpha = 1 
+        #gamma = 0.5 
         # Fetch pre-built action matrix. This is a 2d numpy array where row indexes
         # correspond to the starting state and column indexes are the next states.
         #
@@ -45,14 +44,6 @@ class QLearning(object):
             self.actions
         ))
 
-        # publish the current matrix 
-        self.matrix_pub = rospy.Publisher("/q_learning/q_matrix", QMatrix, queue_size=10)
-        self.reward_sub = rospy.Subscriber("/q_learning/reward", QLearningReward, self.update_q) # how do I make this give me different values
-        self.execute_pub = rospy.Publisher("/q_learning/robot_action" , RobotMoveDBToBlock, queue_size=10)
-
-        self.test_pub = rospy.Publisher("/cmd_vel", Twist, queue_size =10)
-
-        rospy.sleep(3)
         # Fetch states. There are 64 states. Each row index corresponds to the
         # state number, and the value is a list of 3 items indicating the positions
         # of the red, green, blue dumbbells respectively.
@@ -63,24 +54,40 @@ class QLearning(object):
         self.states = np.loadtxt(path_prefix + "states.txt")
         self.states = list(map(lambda x: list(map(lambda y: int(y), x)), self.states))
 
+        ## EVERYTHING PAST THIS WAS NOT INCLUDED IN ORIGINAL
+
+        # publish the current matrix 
+        self.matrix_pub = rospy.Publisher("/q_learning/q_matrix", QMatrix, queue_size=10)
+        self.reward_sub = rospy.Subscriber("/q_learning/reward", QLearningReward, self.update_q) # how do I make this give me different values
+        # pretty sure this is for other file -- self.execute_pub = rospy.Publisher("/q_learning/robot_action" , RobotMoveDBToBlock, queue_size=10)
+
+        # Where is the logic of the while loop carried out? In a callback function, or a different sort of function 
+
         # Initialize q-table values to 0
         self.Q = np.zeros((len(self.states), len(self.actions)))
         self.current_state = 0
         self.next_state = 0 
         self.q_count = 0
+        self.converged = False
 
-        self.MyMove = RobotMoveDBToBlock()
-
+        #self.MyMove = RobotMoveDBToBlock()
         ##print("actions", self.actions)
         ##print("states", self.states)
         ##print("action_matrix", self.action_matrix[0][12])
-    
-    def update_q(self, data): # Main logic occurs here, as the rostopic subscriber gets updates to reward values
 
-        print("update_q")
-        if self.q_convergence:
-            self.save_q_matrix
-            exit()
+
+    ### Q LOGIC: how do we choose what state to start in? 
+    # while ()
+        # 
+    # Q[state, action] = Q[state, a ction] + alpha * (self.reward_sub??  + gamma * np.max(Q[new_state, :]) — Q[state, action])
+
+    # -> how do we know the new state? 
+    
+    def update_q(self, data):
+
+        if self.converged:
+            self.save_q_matrix()
+            # exit()
         self.Q[self.current_state, self.action] = self.Q[self.current_state, self.action] + alpha * (data.reward  + gamma * int(np.max(self.Q[self.new_state, :])) - self.Q[self.current_state, self.action])
         Q_anon = self.serialize_q_matrix()
         self.execute_pub.publish(Q_anon)
@@ -92,18 +99,14 @@ class QLearning(object):
         self.MyMove.block_id = self.actions[int(self.action)]['block']
         self.execute_pub.publish(self.MyMove)
 
-    def q_convergence(self):
-        print("q_convergence")
+    def test_convergence(self):
         if self.q_count > 10:
-            return 1
-        else: 
-            self.q_count += 1
-            return 0
+            self.converged = True
 
     def serialize_q_matrix(self):
         # takes a numpy q anon and turns it into the proper msg type to be published
-        print("serialize_the_q")
         Q_anon = QMatrix()
+        Q_row = QMatrixRow()
         for i in range(len(self.Q)):
             Q_row = QMatrixRow()
             Q_row.q_matrix_row = self.Q[i]
@@ -111,28 +114,31 @@ class QLearning(object):
         return Q_anon
 
     def random_action(self, row):
-        print("random_action")
+
         viable = [] 
         for i in range(len(row)):
             if row[i] != -1:
                 viable.append((i,row[i]))
         return random.choice(viable)
 
-    def run(self): #First iteration of selecting the random action. All subsequent selections happen in the callback 
-        print("run!")
+    def run(self):
         ## print(self.action_matrix[self.current_state])
-        self.next_state, self.action = self.random_action(self.action_matrix[self.current_state])
+        #self.next_state, self.action = self.random_action(self.action_matrix[self.current_state])
         ## print (self.actions[int(action)])
         ## print (self.states[state])
         ## print(state, action) 
-        self.MyMove.robot_db = self.actions[int(self.action)]['dumbbell']
-        self.MyMove.block_id = self.actions[int(self.action)]['block']
-        ## print(type(self.MyMove))
-        self.execute_pub.publish(self.MyMove)
-        rospy.sleep(2)
+        #self.MyMove.robot_db = self.actions[int(self.action)]['dumbbell']
+        #self.MyMove.block_id = self.actions[int(self.action)]['block']
+        #self.execute_pub.publish(self.MyMove)
+        rate = rospy.Rate(0.1)
+        while (not rospy.is_shutdown()):
+            if self.converged:
+                self.save_q_matrix()
+            else:
+                self.test_an_action()
+            rate.sleep()
 
     def save_q_matrix(self):
-        print("save_the_q")
         # TODO: You'll want to save your q_matrix to a file once it is done to
         # avoid retraining
         for i in self.Q:
@@ -141,9 +147,5 @@ class QLearning(object):
             print("\n")
 
 if __name__ == "__main__":
-    print("execute")
     node = QLearning()
     node.run()
-    # test = Twist(linear = Vector3(0,0,0), angular = Vector3(0,0,0))
-    # node.test_pub.publish(test)
-    ## rospy.sleep(5)
