@@ -12,7 +12,7 @@ from q_learning_project.msg import QMatrix
 
 # Path of directory on where this file is located
 path_prefix = os.path.dirname(__file__) + "/action_states/"
-print(path_prefix)
+# print(path_prefix)
 
 class QLearning(object):
     def __init__(self):
@@ -58,12 +58,13 @@ class QLearning(object):
         self.matrix_pub = rospy.Publisher("/q_learning/q_matrix", QMatrix, queue_size=10)
         self.reward_sub = rospy.Subscriber("/q_learning/reward", QLearningReward, self.update_q) # how do I make this give me different values
         self.execute_pub = rospy.Publisher("/q_learning/robot_action" , RobotMoveDBToBlock, queue_size=10)
-
         # Where is the logic of the while loop carried out? In a callback function, or a different sort of function 
+        rospy.sleep(1.0)
+        print("here")
 
         # Initialize q-table values to 0
         self.Q = QMatrix()
-        self.Q.q_matrix = self.init_q_matrix()
+        self.init_q_matrix()
         self.current_state = 0
         self.next_state = -1
         self.action = -1 
@@ -78,8 +79,11 @@ class QLearning(object):
 
     def init_q_matrix(self):
         ''' makes the q matrix with all zeros'''
-        for i in range(len(self.states))
-            self.Q.q_matrix[i] = [0] * 9
+        m = [[0]] * (len(self.states))
+        for i in range(len(self.states)):
+            row = [0] * 9
+            m[i] = row
+        self.Q.q_matrix = m
 
     ### Q LOGIC: how do we choose what state to start in? 
     # while ()
@@ -96,7 +100,8 @@ class QLearning(object):
         old_q_matrix = self.Q.q_matrix
         reward = data.reward
         old_q_val = old_q_matrix[self.current_state][self.action]
-        old_q_val += alpha * (reward + (gamma * max(future states) - old_q_val))
+        future_state = old_q_matrix[self.next_state]
+        old_q_val += alpha * (reward + (gamma * max(future_state) - old_q_val))
         self.Q.q_matrix[self.current_state][self.action] = old_q_val
         self.execute_pub.publish(self.Q)
         self.current_state = self.next_state
@@ -113,10 +118,17 @@ class QLearning(object):
         viable = [] 
         for i in range(len(row)):
             if row[i] != -1:
-                viable.append((i,row[i]))
-        self.next_state, self.action = random.choice(viable)
+                viable.append((int(i),row[i]))
+        choice = random.choice(viable)
+        self.next_state = choice[0]
+        self.action = int(choice[1])
         self.waiting = True
-        self.execute_pub.publish(self.action)      
+        act = self.actions[self.action]
+        action_msg = RobotMoveDBToBlock()
+        action_msg.robot_db = act['dumbbell']
+        action_msg.block_id = act['block']
+        print(action_msg)
+        self.execute_pub.publish(action_msg)      
 
     def run(self):
         ## print(self.action_matrix[self.current_state])
@@ -127,15 +139,20 @@ class QLearning(object):
         #self.MyMove.robot_db = self.actions[int(self.action)]['dumbbell']
         #self.MyMove.block_id = self.actions[int(self.action)]['block']
         #self.execute_pub.publish(self.MyMove)
-        rate = rospy.Rate(0.1)
+        '''
+        rate = rospy.Rate(1)        
         while (not rospy.is_shutdown()):
             if self.converged:
                 self.save_q_matrix()
             else:
                 if not self.waiting:
-                    ''' if ready to try another action, do another'''
+                    # if ready to try another action, do another
                     self.test_an_action()
             rate.sleep()
+        '''
+        print("ere")
+        self.test_an_action()
+        #rospy.spin()
 
     def save_q_matrix(self):
         # TODO: You'll want to save your q_matrix to a file once it is done to
@@ -147,4 +164,5 @@ class QLearning(object):
 
 if __name__ == "__main__":
     node = QLearning()
+    rospy.sleep(5)
     node.run()
