@@ -60,7 +60,6 @@ class QLearning(object):
         self.execute_pub = rospy.Publisher("/q_learning/robot_action" , RobotMoveDBToBlock, queue_size=10)
         # Where is the logic of the while loop carried out? In a callback function, or a different sort of function 
         rospy.sleep(1.0)
-        print("here")
 
         # Initialize q-table values to 0
         self.Q = QMatrix()
@@ -93,6 +92,7 @@ class QLearning(object):
     # -> how do we know the new state? 
     
     def update_q(self, data):
+        print("here")
         '''called when we receive the reward info for the tested action. We want to use
         the algorithm from class to update the qmatrix, then publish'''
         alpha = 1
@@ -103,7 +103,7 @@ class QLearning(object):
         future_state = old_q_matrix[self.next_state]
         old_q_val += alpha * (reward + (gamma * max(future_state) - old_q_val))
         self.Q.q_matrix[self.current_state][self.action] = old_q_val
-        self.execute_pub.publish(self.Q)
+        self.matrix_pub.publish(self.Q)
         self.current_state = self.next_state
         self.waiting = False
 
@@ -139,7 +139,6 @@ class QLearning(object):
         #self.MyMove.robot_db = self.actions[int(self.action)]['dumbbell']
         #self.MyMove.block_id = self.actions[int(self.action)]['block']
         #self.execute_pub.publish(self.MyMove)
-        '''
         rate = rospy.Rate(1)        
         while (not rospy.is_shutdown()):
             if self.converged:
@@ -149,10 +148,7 @@ class QLearning(object):
                     # if ready to try another action, do another
                     self.test_an_action()
             rate.sleep()
-        '''
-        print("ere")
-        self.test_an_action()
-        #rospy.spin()
+        #self.test_an_action()
 
     def save_q_matrix(self):
         # TODO: You'll want to save your q_matrix to a file once it is done to
