@@ -64,7 +64,8 @@ class QLearning(object):
         self.current_state = 0
         self.next_state = -1
         self.action = -1 
-        self.q_count = 0
+        self.q_count = 0 #tracks how many steps done
+        self.in_a_row = 0 #tracks how many uneventful steps have occurred in a row
         self.converged = False
         self.waiting = False
 
@@ -88,19 +89,26 @@ class QLearning(object):
         old_q_row = old_q_matrix[self.current_state].q_matrix_row #row of q vals, yet to be updated
         old_q_val = old_q_row[self.action]
         future_state = old_q_matrix[self.next_state].q_matrix_row
-        old_q_val += alpha * (reward + (gamma * max(future_state) - old_q_val))
+        change = alpha * (reward + (gamma * max(future_state) - old_q_val))
+        old_q_val += change
         old_q_row[self.action] = int(old_q_val)
         self.Q.q_matrix[self.current_state].q_matrix_row = old_q_row
         self.matrix_pub.publish(self.Q)
         self.current_state = self.next_state
         self.waiting = False
         self.q_count += 1
+        if change <= 1:
+            self.in_a_row += 1
+        else:
+            self.in_a_row = 0
         self.test_convergence()
 
     def test_convergence(self):
         ''' method for testing convergence. Will replace with more complex version later'''
-        if self.q_count > 10:
-            self.converged = True
+        print(self.q_count)
+        if self.q_count > 500:
+            if self.in_a_row > 30:
+                self.converged = True
 
     def test_an_action(self):
         ''' find all viable actions, pick one and publish '''
@@ -120,16 +128,17 @@ class QLearning(object):
             action_msg = RobotMoveDBToBlock()
             action_msg.robot_db = act['dumbbell']
             action_msg.block_id = act['block']
-            print(action_msg)
+            #print(action_msg)
             self.execute_pub.publish(action_msg)      
 
     def run(self):
-       ''' runs infinitely. If we are not converged, test an action if we arent waiting for
-       a reard message'''
-        rate = rospy.Rate(1)        
+        ''' runs infinitely. If we are not converged, test an action if we arent waiting for
+        a reard message'''
+        rate = rospy.Rate(3)        
         while (not rospy.is_shutdown()):
             if self.converged:
                 self.save_q_matrix()
+                exit()
             else:
                 if not self.waiting:
                     # if ready to try another action, do another
@@ -145,8 +154,8 @@ class QLearning(object):
         #csv transcription code from stackoverflow
         with open('qmatrix_saved.csv', 'w') as f:
         # using csv.writer method from CSV package
-        write = csv.writer(f)
-        write.writerows(rows)
+            write = csv.writer(f)
+            write.writerows(rows)
 
 if __name__ == "__main__":
     node = QLearning()
