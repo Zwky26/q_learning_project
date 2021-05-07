@@ -28,8 +28,9 @@ class ActionRobotNode(object):
 
         #self.action_sub = rospy.Subscriber("/q_learning/robot_action", RobotMoveDBToBlock, self.signal_received)
         self.robot_movement_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
-        #self.move_group_arm = moveit_commander.MoveGroupCommander("arm")
-        #self.move_group_gripper = moveit_commander.MoveGroupCommander("gripper")
+        self.move_group_arm = moveit_commander.MoveGroupCommander("arm")
+        self.move_group_gripper = moveit_commander.MoveGroupCommander("gripper")
+        self.move_group_arm.go([0,0,0,0], wait=True)
 
         self.laser_scan = rospy.Subscriber("/scan", LaserScan, self.object_identify)
 
@@ -37,7 +38,7 @@ class ActionRobotNode(object):
         self.my_twist = Twist(linear=Vector3(0, 0, 0),angular=Vector3(0, 0, 0))
         self.robot_movement_pub.publish(self.my_twist)
 
-        self.want = 0 ## green for now
+        self.color = "green"
         self.laser_data = 0.5
 
         #green = np.uint8([[[0,255,0 ]]])
@@ -49,15 +50,6 @@ class ActionRobotNode(object):
     def object_identify(self,msg):
     
         self.laser_data = msg.ranges[0]
-        #print("rotate mode")
-        # self.robot_movement_pub.publish(self.my_twist)
-        # vals = [359,0,1]
-        # for i in vals: # find the angle closest to the object, and record the angle and that distance
-        #     if msg.ranges[i] < 0.5:
-        #         if self.want == 1:
-        #             print("not here")
-        #             self.my_twist.angular.z = 0
-        #             self.robot_movement_pub.publish(self.my_twist)
 
     def image_callback(self,msg):
         
@@ -71,18 +63,20 @@ class ActionRobotNode(object):
         image = self.bridge.imgmsg_to_cv2(msg,desired_encoding='bgr8')
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-        # TODO: define the upper and lower bounds for what should be considered 'yellow'
-        lower_color= np.array([60, 60, 60]) #TODO
-        upper_color = np.array([65, 255, 250]) #TODO
-        mask = cv2.inRange(hsv, lower_color, upper_color)
+        # TODO: define the upper and lower bounds for what should be considered 'green'
 
+        if self.color == "green":
+            lower_color= np.array([60, 60, 60])
+            upper_color = np.array([65, 255, 250])
+        else if self.color = "red":
+            lower_color = np.array([161, 155, 84])
+            higher_color = np.array([179, 255, 255])
+        else # "blue" 
+            lower_color = np.array([94, 80, 2])
+            higher_color = np.array([126, 255, 255])
+        mask = cv2.inRange(hsv, lower_color, upper_color)
         # this erases all pixels that aren't yellow
         h, w, d = image.shape
-        ##search_top = int(3*h/4)
-        ##search_bot = int(3*h/4 + 20)
-        ##mask[0:search_top, 0:w] = 0
-        ##mask[search_bot:h, 0:w] = 0
-
         
 
         # using moments() function, the center of the yellow pixels is determined
@@ -91,7 +85,7 @@ class ActionRobotNode(object):
 
         ##print ("here")
         if M['m00'] > 0:
-            # center of the yellow pixels in the image
+            # center of the pixels in the image
             cx = int(M['m10']/M['m00'])
             cy = int(M['m01']/M['m00'])
 
@@ -102,12 +96,14 @@ class ActionRobotNode(object):
             self.my_twist.linear.x = (self.laser_data - 0.5)*.1
             
             self.my_twist.angular.z = (w/2 - cx) * 0.001 
+
+            gripper_joint_close = [-0.01, -0.01]
+            gripper_joint_open = [0, 0]
+            if (w/2 - cx) < 0.5:
+                self.move_group_gripper.go(gripper_joint_close)
             
             self.robot_movement_pub.publish(self.my_twist)
-            # a red circle is visualized in the debugging window to indicate
-            # the center point of the yellow pixels
-            # cv2.circle(image, (cx, cy), 20, (0,0,255), -1)
-
+       
    # def signal_received(self, data):
 
     def run(self):
