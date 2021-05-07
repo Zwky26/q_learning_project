@@ -84,12 +84,12 @@ class ActionRobotNode(object):
         if self.color == "green":
             lower_color= np.array([60, 60, 60])
             upper_color = np.array([65, 255, 250])
-        else if self.color = "red":
+        elif self.color == "red":
             lower_color = np.array([161, 155, 84])
-            higher_color = np.array([179, 255, 255])
-        else # "blue" 
+            upper_color = np.array([179, 255, 255])
+        else: # "blue"
             lower_color = np.array([94, 80, 2])
-            higher_color = np.array([126, 255, 255])
+            upper_color = np.array([126, 255, 255])
         mask = cv2.inRange(hsv, lower_color, upper_color)
         # this erases all pixels that aren't yellow
         h, w, d = image.shape
@@ -109,14 +109,14 @@ class ActionRobotNode(object):
             if self.laser_data > 3.5:
                 self.laser_data = 3.5
             print("lzr", self.laser_data)
-            self.my_twist.linear.x = (self.laser_data - 0.5)*.1
+            self.my_twist.linear.x = (self.laser_data - 0.25)*.1
             
             self.my_twist.angular.z = (w/2 - cx) * 0.001 
 
-            gripper_joint_close = [-0.01, -0.01]
-            gripper_joint_open = [0, 0]
-            if (w/2 - cx) < 0.5:
-                self.move_group_gripper.go(gripper_joint_close)
+            if (w/2 - cx) < 0.25:
+                self.move_group_gripper.go(self.close_grip, wait=True)
+                self.move_group_arm.go(self.lift_pos, wait=True)
+
             
             self.robot_movement_pub.publish(self.my_twist)
        
