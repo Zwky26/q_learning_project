@@ -45,6 +45,9 @@ class ActionRobotNode(object):
         #hsv_green = cv2.cvtColor(green,cv2.COLOR_BGR2HSV)
         #print(hsv_green)
 
+        #self.rest_pos = [0, .7, -.3, -.3]
+        #self.lift_pos = [0, .4, -.6, -.15]
+
         rospy.sleep(1)
 
     def object_identify(self,msg):
