@@ -91,9 +91,8 @@ class ActionRobotNode(object):
             lower_color = np.array([94, 80, 2])
             upper_color = np.array([126, 255, 255])
         mask = cv2.inRange(hsv, lower_color, upper_color)
-        # this erases all pixels that aren't yellow
+
         h, w, d = image.shape
-        
 
         # using moments() function, the center of the yellow pixels is determined
         M = cv2.moments(mask)
@@ -109,15 +108,13 @@ class ActionRobotNode(object):
             if self.laser_data > 3.5:
                 self.laser_data = 3.5
             print("lzr", self.laser_data)
-            self.my_twist.linear.x = (self.laser_data - 0.25)*.1
+            self.my_twist.linear.x = (self.laser_data - 0.20)*.1
             
             self.my_twist.angular.z = (w/2 - cx) * 0.001 
 
-            if (w/2 - cx) < 0.25:
+            if (self.my_twist.angular.x) < 0.01:
                 self.move_group_gripper.go(self.close_grip, wait=True)
                 self.move_group_arm.go(self.lift_pos, wait=True)
-
-            
             self.robot_movement_pub.publish(self.my_twist)
        
    # def signal_received(self, data):
