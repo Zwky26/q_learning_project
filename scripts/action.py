@@ -38,6 +38,7 @@ class ActionRobotNode(object):
         self.robot_movement_pub.publish(self.my_twist)
 
         self.want = 0 ## green for now
+        self.laser_data = 0.5
 
         #green = np.uint8([[[0,255,0 ]]])
         #hsv_green = cv2.cvtColor(green,cv2.COLOR_BGR2HSV)
@@ -46,16 +47,17 @@ class ActionRobotNode(object):
         rospy.sleep(1)
 
     def object_identify(self,msg):
-
+    
+        self.laser_data = msg.ranges[0]
         #print("rotate mode")
-        
-        vals = [359,0,1]
-        for i in vals: # find the angle closest to the object, and record the angle and that distance
-            if msg.ranges[i] < 0.5:
-                if self.want == 1:
-                    print("not here")
-                    self.my_twist.angular.z = 0
-                    self.robot_movement_pub.publish(self.my_twist)
+        # self.robot_movement_pub.publish(self.my_twist)
+        # vals = [359,0,1]
+        # for i in vals: # find the angle closest to the object, and record the angle and that distance
+        #     if msg.ranges[i] < 0.5:
+        #         if self.want == 1:
+        #             print("not here")
+        #             self.my_twist.angular.z = 0
+        #             self.robot_movement_pub.publish(self.my_twist)
 
     def image_callback(self,msg):
         
@@ -93,15 +95,18 @@ class ActionRobotNode(object):
             cx = int(M['m10']/M['m00'])
             cy = int(M['m01']/M['m00'])
 
-            print("cx and cy:", cx, cy)
-            if (w/2 - cx) == 0:
-                self.my_twist.angular.z = 0
-            else:
-                self.my_twist.angular.z = 0.1
+            #print("cx and cy:", cx, cy)
+            if self.laser_data > 3.5:
+                self.laser_data = 3.5
+            print("lzr", self.laser_data)
+            self.my_twist.linear.x = (self.laser_data - 0.5)*.1
+            
+            self.my_twist.angular.z = (w/2 - cx) * 0.001 
+            
             self.robot_movement_pub.publish(self.my_twist)
             # a red circle is visualized in the debugging window to indicate
             # the center point of the yellow pixels
-            cv2.circle(image, (cx, cy), 20, (0,0,255), -1)
+            # cv2.circle(image, (cx, cy), 20, (0,0,255), -1)
 
    # def signal_received(self, data):
 
