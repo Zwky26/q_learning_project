@@ -30,7 +30,11 @@ class ActionRobotNode(object):
         self.robot_movement_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
         self.move_group_arm = moveit_commander.MoveGroupCommander("arm")
         self.move_group_gripper = moveit_commander.MoveGroupCommander("gripper")
-        self.move_group_arm.go([0,0,0,0], wait=True)
+        self.rest_pos = [0, .7, -.3, -.3]
+        self.lift_pos = [0, .4, -.6, -.15]
+        self.open_grip = [0.01, 0.01]
+        self.move_group_arm.go(self.rest_pos, wait=True)
+        self.move_group_gripper.go(self.open_grip, wait=True)
 
         self.laser_scan = rospy.Subscriber("/scan", LaserScan, self.object_identify)
 
@@ -45,8 +49,7 @@ class ActionRobotNode(object):
         #hsv_green = cv2.cvtColor(green,cv2.COLOR_BGR2HSV)
         #print(hsv_green)
 
-        #self.rest_pos = [0, .7, -.3, -.3]
-        #self.lift_pos = [0, .4, -.6, -.15]
+        
 
         rospy.sleep(1)
 
