@@ -33,6 +33,7 @@ class ActionRobotNode(object):
         self.rest_pos = [0, .7, -.3, -.3]
         self.lift_pos = [0, .4, -.6, -.15]
         self.open_grip = [0.01, 0.01]
+        self.close_grip = [0.005, 0.005]
         self.move_group_arm.go(self.rest_pos, wait=True)
         self.move_group_gripper.go(self.open_grip, wait=True)
 
@@ -52,6 +53,15 @@ class ActionRobotNode(object):
         
 
         rospy.sleep(1)
+
+    def pickup_dumbbell(self):
+        self.move_group_gripper.go(self.close_grip, wait=True)
+        self.move_group_arm.go(self.lift_pos, wait=True)
+
+    def lower_dumbbell(self):
+        self.move_group_arm.go(self.rest_pos, wait=True)
+        self.move_group_gripper.go(self.open_grip, wait=True)
+
 
     def object_identify(self,msg):
     
