@@ -49,6 +49,7 @@ class ActionRobotNode(object):
         self.robot_movement_pub.publish(self.my_twist)
 
         self.color = "green"
+        self.block_id = 1
         self.laser_data = 0.5
         self.holding = 1
 
@@ -140,7 +141,21 @@ class ActionRobotNode(object):
                     self.robot_movement_pub.publish(self.my_twist)
                     images = [self.image]
                     p = self.pipeline.recognize(images)
-                    print("prediction", p[0][0])
+                    print
+                    id = ""
+                    left = 1000
+                    for b,a in p[0]:
+                        #print("prediction?", b )
+                        for i in a:
+                            if i[0] < left: 
+                                id = b
+                                left = i[0]
+                            #print(i[0]) 
+                    #b , c = p[0][0]
+                    if int(id) == self.block_id:
+                        self.my_twist.linear.x = 1
+                        self.robot_movement_pub.publish(self.my_twist)
+                        break
                     block_count += 1
                     self.my_twist.angular.z = angular_speed
                     self.robot_movement_pub.publish(self.my_twist)
