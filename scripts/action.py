@@ -16,6 +16,10 @@ drop a dumbbell at a specific location. It will publish messages to cmd_vel
 and moveit to move turtlebot and arm according.
 '''
 
+PI = 3.1415926535897
+right_angle = 90*2*PI/360
+angular_speed = 15*2*PI/360
+
 class ActionRobotNode(object):
     def __init__(self):
      # Set up traffic status publisher
@@ -34,7 +38,7 @@ class ActionRobotNode(object):
         self.rest_pos = [0, .7, -.3, -.3]
         self.lift_pos = [0, .6, -.6, -.15]
         self.open_grip = [0.012, 0.012]
-        self.close_grip = [0.005, 0.005]
+        self.close_grip = [0.002, 0.002]
         self.move_group_arm.go(self.rest_pos, wait=True)
         self.move_group_gripper.go(self.open_grip, wait=True)
 
@@ -46,14 +50,13 @@ class ActionRobotNode(object):
 
         self.color = "green"
         self.laser_data = 0.5
-        self.holding = 0
+        self.holding = 1
 
         #green = np.uint8([[[0,255,0 ]]])
         #hsv_green = cv2.cvtColor(green,cv2.COLOR_BGR2HSV)
         #print(hsv_green)
         self.pipeline = keras_ocr.pipeline.Pipeline()
         
-
         rospy.sleep(1)
 
     def pickup_dumbbell(self):
@@ -71,16 +74,10 @@ class ActionRobotNode(object):
 
     def image_callback(self,msg):
         
-        self.my_twist.angular
-        image = self.bridge.imgmsg_to_cv2(msg,desired_encoding='bgr8')
-        if self.holding == 1: 
-            images = [image]
-            prediction_groups = self.pipeline.recognize(images)
-            print("prediction", prediction_groups)
-
+        self.image = self.bridge.imgmsg_to_cv2(msg,desired_encoding='bgr8')
         if self.holding == 0:
             
-            hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+            hsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
 
             # TODO: define the upper and lower bounds for what should be considered 'green'
 
@@ -95,7 +92,7 @@ class ActionRobotNode(object):
                 upper_color = np.array([126, 255, 255])
             mask = cv2.inRange(hsv, lower_color, upper_color)
 
-            h, w, d = image.shape
+            h, w, d = self.image.shape
 
             # using moments() function, the center of the yellow pixels is determined
             M = cv2.moments(mask)
@@ -111,24 +108,45 @@ class ActionRobotNode(object):
                 if self.laser_data > 3.5:
                     self.laser_data = 3.5
                 print("lzr", self.laser_data)
-                self.my_twist.linear.x = (self.laser_data - 0.20)*.085
+                self.my_twist.linear.x = (self.laser_data - 0.24)*.08
                 
                 self.my_twist.angular.z = (w/2 - cx) * 0.001 
 
                 if (self.laser_data) < 0.24:
+                    self.my_twist.linear.x = 0
+                    self.robot_movement_pub.publish(self.my_twist)
                     self.move_group_gripper.go(self.close_grip, wait=True)
                     self.move_group_arm.go(self.lift_pos, wait=True)
                     self.holding = 1
+                    self.move_group_arm.stop()
+                    self.move_group_gripper.stop()
                 self.robot_movement_pub.publish(self.my_twist)
        
    # def signal_received(self, data):
 
     def run(self):
-        # Once every 10 seconds
-        #rate = rospy.Rate(0.1)
-        #while (not rospy.is_shutdown()):
-            ### self.traffic_status_pub.publish(trafficMsg)
-            #rate.sleep()
+        if self.holding == 1:
+            current_angle = 0
+            self.my_twist.angular.z = angular_speed
+            block_count = 0
+            t0 = rospy.Time.now().to_sec()    
+            while (current_angle <= right_angle): # The turtlebot turns left until it has made a 90 degree turn
+                self.robot_movement_pub.publish(self.my_twist)
+                t1 = rospy.Time.now().to_sec()
+                current_angle = angular_speed * (t1-t0)
+            while block_count < 3:
+                if self.laser_data < 3.5: 
+                    self.my_twist.angular.z = 0
+                    self.robot_movement_pub.publish(self.my_twist)
+                    images = [self.image]
+                    p = self.pipeline.recognize(images)
+                    print("prediction", p[0][0])
+                    block_count += 1
+                    self.my_twist.angular.z = angular_speed
+                    self.robot_movement_pub.publish(self.my_twist)
+                    while self.laser_data < 3.5: 
+                        pass
+            print("hit three blocks")
         rospy.spin()
 
 if __name__ == '__main__':
