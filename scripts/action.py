@@ -149,9 +149,21 @@ class ActionRobotNode(object):
     def run(self):
         if self.holding == 1:
 
-            threes = ["3","s","e"]
+            threes = ["3","s","e","5"]
             twos = ["2"]
             ones = ["1","l", "1l"]
+
+            self.my_twist.linear.x = -.1
+            #self.robot_movement_pub.publish(self.my_twist)
+
+            t0 = rospy.Time.now().to_sec()
+            time_count = 0
+            while (time_count <= 6): # The turtlebot turns left until it has made a 90 degree turn
+                self.robot_movement_pub.publish(self.my_twist)
+                t1 = rospy.Time.now().to_sec()
+                time_count = t1 -t0
+            self.my_twist.linear.x = 0
+            self.robot_movement_pub.publish(self.my_twist) 
 
             current_angle = 0
             self.my_twist.angular.z = angular_speed
@@ -161,7 +173,7 @@ class ActionRobotNode(object):
                 self.robot_movement_pub.publish(self.my_twist)
                 t1 = rospy.Time.now().to_sec()
                 current_angle = angular_speed * (t1-t0)
-            while block_count < 3:
+            while block_count < 5:
                 if self.laser_data < 3.5: 
                     self.my_twist.angular.z = 0
                     self.robot_movement_pub.publish(self.my_twist)
@@ -196,7 +208,7 @@ class ActionRobotNode(object):
                         print("half width", self.w/2)
                         while self.laser_data > 0.5:
                             self.robot_movement_pub.publish(self.my_twist)
-                            self.my_twist.linear.x = (self.laser_data - 0.5)*.05
+                            self.my_twist.linear.x = (self.laser_data - 0.5)*.1
                             # self.my_twist.angular.z = (self.w/2 - cx_final) * 0.005 
                             # images = [self.image]
                             # p = self.pipeline.recognize(images)
@@ -205,9 +217,9 @@ class ActionRobotNode(object):
                     block_count += 1
                     self.my_twist.angular.z = angular_speed
                     self.robot_movement_pub.publish(self.my_twist)
-                    print(self.laser_data)
+                    #print(self.laser_data)
                     while self.laser_data < 3.5: 
-                        print(self.laser_data)
+                        #print(self.laser_data)
                         pass
             print("hit three blocks")
         rospy.spin()
