@@ -52,6 +52,7 @@ class ActionRobotNode(object):
         self.block_id = 1
         self.laser_data = 0.5
         self.holding = 1
+        self.w = 0 
 
         #green = np.uint8([[[0,255,0 ]]])
         #hsv_green = cv2.cvtColor(green,cv2.COLOR_BGR2HSV)
@@ -76,6 +77,8 @@ class ActionRobotNode(object):
     def image_callback(self,msg):
         
         self.image = self.bridge.imgmsg_to_cv2(msg,desired_encoding='bgr8')
+        h, w, d = self.image.shape
+        self.w = w
         if self.holding == 0:
             
             hsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
@@ -93,7 +96,7 @@ class ActionRobotNode(object):
                 upper_color = np.array([126, 255, 255])
             mask = cv2.inRange(hsv, lower_color, upper_color)
 
-            h, w, d = self.image.shape
+            
 
             # using moments() function, the center of the yellow pixels is determined
             M = cv2.moments(mask)
@@ -124,9 +127,32 @@ class ActionRobotNode(object):
                 self.robot_movement_pub.publish(self.my_twist)
        
    # def signal_received(self, data):
+    def pipeline_helper(self,p):
+        id = ""
+        left = 1000
+        cx_dict = {}
+        for b,a in p[0]:
+            #print("prediction?", b )
+            cx = 0
+            for i in a:
+                if i[0] < left: 
+                    id = b
+                    left = i[0]
+                    print(i) 
+                cx += i[0]
+            #print("batch")
+            cx = cx /4
+            cx_dict[b] = cx
+        x_final = cx_dict[id]
+        return x_final, id       
 
     def run(self):
         if self.holding == 1:
+
+            threes = ["3","s","e"]
+            twos = ["2"]
+            ones = ["1","l", "1l"]
+
             current_angle = 0
             self.my_twist.angular.z = angular_speed
             block_count = 0
@@ -141,25 +167,47 @@ class ActionRobotNode(object):
                     self.robot_movement_pub.publish(self.my_twist)
                     images = [self.image]
                     p = self.pipeline.recognize(images)
-                    print
+                    #print(p[0])
                     id = ""
                     left = 1000
+                    cx_dict = {}
                     for b,a in p[0]:
                         #print("prediction?", b )
+                        cx = 0
                         for i in a:
                             if i[0] < left: 
                                 id = b
                                 left = i[0]
-                            #print(i[0]) 
-                    #b , c = p[0][0]
-                    if int(id) == self.block_id:
-                        self.my_twist.linear.x = 1
-                        self.robot_movement_pub.publish(self.my_twist)
+                            print(i) 
+                            cx += i[0]
+                        #print("batch")
+                        cx = cx /4
+                        cx_dict[b] = cx
+                    cx_final = cx_dict[id]
+                    print("prediction" , id)
+                    if id in ones:
+                        id2 = 1
+                    elif id in twos:
+                        id2 = 2
+                    elif id in threes:
+                        id2 = 3
+                    if id2 == self.block_id:
+                        print("cx_final" , cx_final)
+                        print("half width", self.w/2)
+                        while self.laser_data > 0.5:
+                            self.robot_movement_pub.publish(self.my_twist)
+                            self.my_twist.linear.x = (self.laser_data - 0.5)*.05
+                            # self.my_twist.angular.z = (self.w/2 - cx_final) * 0.005 
+                            # images = [self.image]
+                            # p = self.pipeline.recognize(images)
+                            # cx_final,junk_id = self.pipeline_helper(p)
                         break
                     block_count += 1
                     self.my_twist.angular.z = angular_speed
                     self.robot_movement_pub.publish(self.my_twist)
+                    print(self.laser_data)
                     while self.laser_data < 3.5: 
+                        print(self.laser_data)
                         pass
             print("hit three blocks")
         rospy.spin()
