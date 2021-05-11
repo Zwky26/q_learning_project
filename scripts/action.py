@@ -149,8 +149,9 @@ class ActionRobotNode(object):
                     self.robot_movement_pub.publish(self.my_twist)
                     images = [self.image]
                     p = self.pipeline.recognize(images)
-                    #print(p[0])
+                    print(p[0])
                     id = ""
+                    id2 = 0
                     left = 1000
                     cx_dict = {}
                     for b,a in p[0]:
@@ -163,9 +164,9 @@ class ActionRobotNode(object):
                             print(i) 
                             cx += i[0]
                         #print("batch")
-                        cx = cx /4
-                        cx_dict[b] = cx
-                    cx_final = cx_dict[id]
+                        #cx = cx /4
+                        #cx_dict[b] = cx
+                    #cx_final = cx_dict[id]
                     print("prediction" , id)
                     if id in ones:
                         id2 = 1
@@ -174,8 +175,8 @@ class ActionRobotNode(object):
                     elif id in threes:
                         id2 = 3
                     if id2 == self.block_id:
-                        print("cx_final" , cx_final)
-                        print("half width", self.w/2)
+                        #print("cx_final" , cx_final)
+                        #print("half width", self.w/2)
                         while self.laser_data > 0.5:
                             self.robot_movement_pub.publish(self.my_twist)
                             self.my_twist.linear.x = (self.laser_data - 0.5)*.1
@@ -183,6 +184,8 @@ class ActionRobotNode(object):
                             # images = [self.image]
                             # p = self.pipeline.recognize(images)
                             # cx_final,junk_id = self.pipeline_helper(p)
+                            self.lower_dumbbell()
+                            self.holding = 0 
                         break
                     block_count += 1
                     self.my_twist.angular.z = angular_speed
