@@ -23,7 +23,7 @@ angular_speed = 15*2*PI/360
 class ActionRobotNode(object):
     def __init__(self):
      # Set up traffic status publisher
-        # set up ROS / OpenCV bridge
+        # set up ROS  / OpenCV bridge
         rospy.init_node("action")
 
         self.bridge = cv_bridge.CvBridge()
@@ -36,7 +36,7 @@ class ActionRobotNode(object):
         self.move_group_arm = moveit_commander.MoveGroupCommander("arm")
         self.move_group_gripper = moveit_commander.MoveGroupCommander("gripper")
         self.rest_pos = [0, .7, -.3, -.3]
-        self.lift_pos = [0, .4, -.9, -.3]
+        self.lift_pos = [0, .3, -1, -.3]
         self.open_grip = [0.010, 0.010]
         self.close_grip = [0.007, 0.007]
         self.move_group_arm.go(self.rest_pos, wait=True)
