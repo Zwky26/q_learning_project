@@ -51,7 +51,7 @@ class ActionRobotNode(object):
         self.color = "green"
         self.block_id = 1
         self.laser_data = 0.5
-        self.holding = 1
+        self.holding = 0
         self.w = 0 
 
         #green = np.uint8([[[0,255,0 ]]])
@@ -80,11 +80,8 @@ class ActionRobotNode(object):
         h, w, d = self.image.shape
         self.w = w
         if self.holding == 0:
-            
             hsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
-
             # TODO: define the upper and lower bounds for what should be considered 'green'
-
             if self.color == "green":
                 lower_color= np.array([60, 60, 60])
                 upper_color = np.array([65, 255, 250])
@@ -95,27 +92,20 @@ class ActionRobotNode(object):
                 lower_color = np.array([94, 80, 2])
                 upper_color = np.array([126, 255, 255])
             mask = cv2.inRange(hsv, lower_color, upper_color)
-
-            
-
             # using moments() function, the center of the yellow pixels is determined
             M = cv2.moments(mask)
                 # if there are any yellow pixels found
-
             ##print ("here")
             if M['m00'] > 0:
                 # center of the pixels in the image
                 cx = int(M['m10']/M['m00'])
                 cy = int(M['m01']/M['m00'])
-
                 #print("cx and cy:", cx, cy)
                 if self.laser_data > 3.5:
                     self.laser_data = 3.5
                 print("lzr", self.laser_data)
                 self.my_twist.linear.x = (self.laser_data - 0.24)*.08
-                
                 self.my_twist.angular.z = (w/2 - cx) * 0.001 
-
                 if (self.laser_data) < 0.24:
                     self.my_twist.linear.x = 0
                     self.robot_movement_pub.publish(self.my_twist)
@@ -125,28 +115,7 @@ class ActionRobotNode(object):
                     self.move_group_arm.stop()
                     self.move_group_gripper.stop()
                 self.robot_movement_pub.publish(self.my_twist)
-       
-   # def signal_received(self, data):
-    def pipeline_helper(self,p):
-        id = ""
-        left = 1000
-        cx_dict = {}
-        for b,a in p[0]:
-            #print("prediction?", b )
-            cx = 0
-            for i in a:
-                if i[0] < left: 
-                    id = b
-                    left = i[0]
-                    print(i) 
-                cx += i[0]
-            #print("batch")
-            cx = cx /4
-            cx_dict[b] = cx
-        x_final = cx_dict[id]
-        return x_final, id       
 
-    def run(self):
         if self.holding == 1:
 
             threes = ["3","s","e","5"]
@@ -173,6 +142,7 @@ class ActionRobotNode(object):
                 self.robot_movement_pub.publish(self.my_twist)
                 t1 = rospy.Time.now().to_sec()
                 current_angle = angular_speed * (t1-t0)
+
             while block_count < 5:
                 if self.laser_data < 3.5: 
                     self.my_twist.angular.z = 0
@@ -222,6 +192,8 @@ class ActionRobotNode(object):
                         #print(self.laser_data)
                         pass
             print("hit three blocks")
+
+    def run(self):
         rospy.spin()
 
 if __name__ == '__main__':
