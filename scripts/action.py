@@ -36,7 +36,7 @@ class ActionRobotNode(object):
         self.move_group_arm = moveit_commander.MoveGroupCommander("arm")
         self.move_group_gripper = moveit_commander.MoveGroupCommander("gripper")
         self.rest_pos = [0, .7, -.3, -.3]
-        self.lift_pos = [0, .3, -1, -.3]
+        self.lift_pos = [0, .3, -.8, -.3]
         self.open_grip = [0.010, 0.010]
         self.close_grip = [0.007, 0.007]
         self.move_group_arm.go(self.rest_pos, wait=True)
