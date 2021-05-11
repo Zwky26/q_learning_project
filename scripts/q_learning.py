@@ -66,8 +66,8 @@ class QLearning(object):
         self.action = -1 
         self.q_count = 0 #tracks how many steps done
         self.in_a_row = 0 #tracks how many uneventful steps have occurred in a row
-        self.converged = False
-        self.waiting = False
+        self.converged = False #bool for convergence
+        self.waiting = False #bool to make sure we dont have overlap of topics
 
     def init_q_matrix(self):
         ''' initializes the q matrix with all zeros'''
@@ -89,7 +89,7 @@ class QLearning(object):
         old_q_row = old_q_matrix[self.current_state].q_matrix_row #row of q vals, yet to be updated
         old_q_val = old_q_row[self.action]
         future_state = old_q_matrix[self.next_state].q_matrix_row
-        change = alpha * (reward + (gamma * max(future_state) - old_q_val))
+        change = alpha * (reward + (gamma * max(future_state) - old_q_val)) #formula from class
         old_q_val += change
         old_q_row[self.action] = int(old_q_val)
         self.Q.q_matrix[self.current_state].q_matrix_row = old_q_row
@@ -97,17 +97,17 @@ class QLearning(object):
         self.current_state = self.next_state
         self.waiting = False
         self.q_count += 1
-        if change <= 1:
+        if change <= 1: #if no significant changes
             self.in_a_row += 1
         else:
             self.in_a_row = 0
         self.test_convergence()
 
     def test_convergence(self):
-        ''' method for testing convergence. Will replace with more complex version later'''
+        ''' method for testing convergence. Basically have floor of how many iterations'''
         print(self.q_count)
         if self.q_count > 500:
-            if self.in_a_row > 30:
+            if self.in_a_row > 60:
                 self.converged = True
 
     def test_an_action(self):
@@ -119,7 +119,7 @@ class QLearning(object):
                 viable.append((int(i),row[i]))
         if viable == []: #happens when all blocks are filled, just reset to blank world and start again
             self.current_state = 0
-        else:
+        else: #gets the action, and updates the states and other properties respectively
             choice = random.choice(viable)
             self.next_state = choice[0]
             self.action = int(choice[1])
