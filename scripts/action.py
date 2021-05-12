@@ -8,7 +8,7 @@ from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist, Vector3
 from sensor_msgs.msg import LaserScan
 import keras_ocr
-
+from csv import reader
 
 '''
 This node will subscribe to robot_action and listen for commands to pick up or 
@@ -55,6 +55,16 @@ class ActionRobotNode(object):
         self.laser_data = 0.5
         self.holding = 0
         self.w = 0 
+        self.q = []
+
+        # open file in read mode
+        with open('qmatrix.csv', 'r') as read_obj:
+            # pass the file object to reader() to get the reader object
+            csv_reader = reader(read_obj)
+            # Iterate over each row in the csv using reader object
+            for row in csv_reader:
+                # row variable is a list that represents a row in csv
+                self.q.append(row)
 
         #green = np.uint8([[[0,255,0 ]]])
         #hsv_green = cv2.cvtColor(green,cv2.COLOR_BGR2HSV)
