@@ -19,11 +19,16 @@
 
 # Writeup
 
+## Objectives Description
+
+The goal for this project is to encode a q-matrix, that has values that correspond to rewards for some world. Using this trained q-matrix, we can instruct the robot to manuever and place the dumbbells to optimize the reward.
+
+## High Level Description
+The q-matrix is constructed with rows representing the current state (where dumbbells are) and columns representing actions the robot can take (moving dumbbell to specific location). Each of these spaces represents a value, corresponding to a reward. To "train" the matrix, we simulate hundreds of possible actions, updating each space with a formula that roughly indicates the true "value" of choosing such an action. Because the rewards are published only once all three dumbbells are placed with a respective block, this reward will percolate through the possible actions. Once we've finished training, selecting the action corresponds to a better reward. We follow this maximizing action, which should guide us to the optimal reward. 
+
 ## Code Organization
 
-Because the code is scattered across multiple files, outlines here. 
-
-* Q_Learning file: We initialize with the proper subscribers and publishers, and define a Q-matrix according to the fixed actions included. For the node, every x seconds we do the same procedure. Check if the Q-matrix has converged. If yes, save the matrix to a csv and exit. Otherwise, we pick a random action to be tested. We update the qmatrix using the reward and our new state from the action matrix and repeat. We have a property "waiting" so that the publishing step and the updating step don't overlap. 
+* Q_Learning Algorithm: Training is done exclusively in the q_learning.py file. To select actions for the phantom robot, we consult the action matrix with the row corresponding to the current state. 
 
 Action file: This is where we will send the actual cmd_vel and arm messages to maneuver the robot, based on the saved q matrix. The overall layout is: we read from the q matrix to determine the action. This action will tell us a color for the dumbbell and a number for the block. We call a method to drive to the dumbbell, which will loop until we reach it. Then, we call another method to pick it up and rotate the arm, so the dumbbell is not blocking the camera (might be optional). We then issue a third method to drive to the block, using the computer vision code from lecture 11. We run the second method in reverse, placing the dumbbell where is should go. One minor addition that might be needed is a helper method that rotates the Turtlebot around until it gets visual of what it is looking for. That is, if something is out of sight, find it.
 
