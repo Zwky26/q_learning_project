@@ -68,7 +68,7 @@ class ActionRobotNode(object):
         self.move_group_arm.go(self.lift_pos, wait=True)
 
     def lower_dumbbell(self):
-        self.move_group_arm.go(self.lower_pos, wait=True)
+        self.move_group_arm.go(self.rest_pos, wait=True)
         self.move_group_gripper.go(self.open_grip, wait=True)
 
 
@@ -195,7 +195,7 @@ class ActionRobotNode(object):
                     if id2 == self.block_id:
                         print("going forward")
                         #print("half width", self.w/2)
-                        while self.laser_data > 0.5:
+                        while self.laser_data > 0.75:
                             # self.robot_movement_pub.publish(self.my_twist)
                             print("lzr", self.laser_data)
                             self.my_twist.linear.x = max(.05, (self.laser_data - 0.5)*.08)
@@ -204,9 +204,11 @@ class ActionRobotNode(object):
                             # images = [self.image]
                             # p = self.pipeline.recognize(images)
                             # cx_final,junk_id = self.pipeline_helper(p)
+                        self.move_group_arm.go(self.lift_pos, wait=True)
                         self.lower_dumbbell()
                         self.holding = 0
                         self.move_backwards()
+                        
                         self.turn_right()
                         self.turn_right()
                         self.move_group_gripper.go(self.open_grip, wait=True)
