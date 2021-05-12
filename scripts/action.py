@@ -36,12 +36,8 @@ class ActionRobotNode(object):
         self.move_group_arm = moveit_commander.MoveGroupCommander("arm")
         self.move_group_gripper = moveit_commander.MoveGroupCommander("gripper")
         self.rest_pos = [0, .7, -.3, -.3]
-<<<<<<< HEAD
         self.lift_pos = [0, .3, -.8, -.3]
         self.turn_pos = [1.5, .3, -.8, -.3]
-=======
-        self.lift_pos = [0, .2, -.9, -.3]
->>>>>>> 68060c1334e8a2609b831ed7cdfc08d6f14fcb98
         self.open_grip = [0.010, 0.010]
         self.close_grip = [0.007, 0.007]
         self.move_group_arm.go(self.rest_pos, wait=True)
@@ -53,7 +49,7 @@ class ActionRobotNode(object):
         self.my_twist = Twist(linear=Vector3(0, 0, 0),angular=Vector3(0, 0, 0))
         self.robot_movement_pub.publish(self.my_twist)
 
-        self.color = "green"
+        self.color = "blue"
         self.block_id = 1
         self.laser_data = 0.5
         self.holding = 0
@@ -127,6 +123,7 @@ class ActionRobotNode(object):
                 self.robot_movement_pub.publish(self.my_twist)
 
     def move_backwards(self):
+        self.my_twist.linear.x = -.1
         t0 = rospy.Time.now().to_sec()
         time_count = 0
         while (time_count <= 6): # The turtlebt moves backwards
@@ -147,13 +144,13 @@ class ActionRobotNode(object):
 
     def image_rec(self):
         if self.holding == 1:
-            #print("here2")
+            print("id", self.block_id)
 
             threes = ["3","s","e","5"]
             twos = ["2"]
             ones = ["1","l", "1l"]
 
-            self.my_twist.linear.x = -.1
+            
             #self.robot_movement_pub.publish(self.my_twist)
             self.move_backwards()
             self.turn_right()
@@ -188,14 +185,17 @@ class ActionRobotNode(object):
                         id2 = 1
                     elif id in twos:
                         id2 = 2
+                        print("id is twooooo")
                     elif id in threes:
                         id2 = 3
                     if id2 == self.block_id:
-                        #print("cx_final" , cx_final)
+                        print("going forward")
                         #print("half width", self.w/2)
                         while self.laser_data > 0.5:
+                            # self.robot_movement_pub.publish(self.my_twist)
+                            print("lzr", self.laser_data)
+                            self.my_twist.linear.x = (self.laser_data - 0.5)*.08
                             self.robot_movement_pub.publish(self.my_twist)
-                            self.my_twist.linear.x = (self.laser_data - 0.5)*.1
                             # self.my_twist.angular.z = (self.w/2 - cx_final) * 0.005 
                             # images = [self.image]
                             # p = self.pipeline.recognize(images)
@@ -205,7 +205,7 @@ class ActionRobotNode(object):
                         self.move_backwards()
                         self.turn_right()
                         self.turn_right()
-                        self.color = "blue"
+                        self.color = "green"
                         self.block_id = "2"
                         break
                     block_count += 1
