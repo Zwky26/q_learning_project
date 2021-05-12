@@ -38,6 +38,7 @@ class ActionRobotNode(object):
         self.rest_pos = [0, .7, -.3, -.3]
         self.lift_pos = [0, .3, -.8, -.3]
         self.turn_pos = [1.5, .3, -.8, -.3]
+        self.lower_pos = [1.5, .7, -.3, -.3]
         self.open_grip = [0.010, 0.010]
         self.close_grip = [0.007, 0.007]
         self.move_group_arm.go(self.rest_pos, wait=True)
@@ -67,7 +68,7 @@ class ActionRobotNode(object):
         self.move_group_arm.go(self.lift_pos, wait=True)
 
     def lower_dumbbell(self):
-        self.move_group_arm.go(self.rest_pos, wait=True)
+        self.move_group_arm.go(self.lower_pos, wait=True)
         self.move_group_gripper.go(self.open_grip, wait=True)
 
 
@@ -109,7 +110,7 @@ class ActionRobotNode(object):
                 if self.laser_data > 3.5:
                     self.laser_data = 3.5
                 print("lzr", self.laser_data)
-                self.my_twist.linear.x = (self.laser_data - 0.24)*.085
+                self.my_twist.linear.x = max (.0075,((self.laser_data - 0.24)*.085))
                 self.my_twist.angular.z = (self.w/2 - cx) * 0.001 
                 if (self.laser_data) < 0.24:
                     self.my_twist.linear.x = 0
@@ -144,7 +145,7 @@ class ActionRobotNode(object):
 
     def image_rec(self):
         if self.holding == 1:
-            print("id", self.block_id)
+            #print("id", self.block_id)
 
             threes = ["3","s","e","5"]
             twos = ["2"]
@@ -188,13 +189,16 @@ class ActionRobotNode(object):
                         print("id is twooooo")
                     elif id in threes:
                         id2 = 3
+                    print("id2", id2)
+                    print("block_id", self.block_id)
+                    print("bool?", self.block_id - id2)
                     if id2 == self.block_id:
                         print("going forward")
                         #print("half width", self.w/2)
                         while self.laser_data > 0.5:
                             # self.robot_movement_pub.publish(self.my_twist)
                             print("lzr", self.laser_data)
-                            self.my_twist.linear.x = (self.laser_data - 0.5)*.08
+                            self.my_twist.linear.x = max(.05, (self.laser_data - 0.5)*.08)
                             self.robot_movement_pub.publish(self.my_twist)
                             # self.my_twist.angular.z = (self.w/2 - cx_final) * 0.005 
                             # images = [self.image]
@@ -205,6 +209,7 @@ class ActionRobotNode(object):
                         self.move_backwards()
                         self.turn_right()
                         self.turn_right()
+                        self.move_group_gripper.go(self.open_grip, wait=True)
                         self.color = "green"
                         self.block_id = "2"
                         break
