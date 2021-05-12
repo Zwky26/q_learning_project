@@ -195,7 +195,7 @@ class ActionRobotNode(object):
                     if id2 == self.block_id:
                         print("going forward")
                         #print("half width", self.w/2)
-                        while self.laser_data > 0.75:
+                        while self.laser_data > 1:
                             # self.robot_movement_pub.publish(self.my_twist)
                             print("lzr", self.laser_data)
                             self.my_twist.linear.x = max(.05, (self.laser_data - 0.5)*.08)
@@ -213,7 +213,7 @@ class ActionRobotNode(object):
                         self.turn_right()
                         self.move_group_gripper.go(self.open_grip, wait=True)
                         self.color = "green"
-                        self.block_id = "2"
+                        self.block_id = 2
                         break
                     block_count += 1
                     self.my_twist.angular.z = angular_speed
