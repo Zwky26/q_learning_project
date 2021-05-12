@@ -105,7 +105,7 @@ class QLearning(object):
 
     def test_convergence(self):
         ''' method for testing convergence. Basically have floor of how many iterations'''
-        print(self.q_count)
+        #print(self.q_count)
         if self.q_count > 500:
             if self.in_a_row > 60:
                 self.converged = True
@@ -152,7 +152,7 @@ class QLearning(object):
             rows.append(i.q_matrix_row)
 
         #csv transcription code from stackoverflow
-        with open('qmatrix_saved.csv', 'w') as f:
+        with open('qmatrix.csv', 'w') as f:
         # using csv.writer method from CSV package
             write = csv.writer(f)
             write.writerows(rows)
