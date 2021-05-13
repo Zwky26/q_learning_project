@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 import cv2, cv_bridge
+import os
 import rospy
+import random
 from q_learning_project.msg import RobotMoveDBToBlock
 import numpy as np
 import moveit_commander
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist, Vector3
 from sensor_msgs.msg import LaserScan
+from q_learning_project.msg import QMatrix, QMatrixRow
 import keras_ocr
 from csv import reader
 
@@ -19,6 +22,10 @@ and moveit to move turtlebot and arm according.
 PI = 3.1415926535897
 right_angle = 90*2*PI/360
 angular_speed = 15*2*PI/360
+path_prefix = os.path.dirname(__file__) + "/action_states/"
+
+def next_state_calc(r,g,b):
+    return r + (16 * b) + (4 * g)
 
 class ActionRobotNode(object):
     def __init__(self):
@@ -65,6 +72,46 @@ class ActionRobotNode(object):
             for row in csv_reader:
                 # row variable is a list that represents a row in csv
                 self.q.append(row)
+        
+        self.action_matrix = np.loadtxt(path_prefix + "action_matrix.txt")
+        colors = ["red", "green", "blue"]
+        self.actions = np.loadtxt(path_prefix + "actions.txt")
+        self.actions = list(map(
+            lambda x: {"dumbbell": colors[int(x[0])], "block": int(x[1])},
+            self.actions
+        ))
+
+        current_state = 0
+        to_do = []
+        r = 0
+        g = 0
+        b = 0
+        while (int(max(self.q[current_state])) > 0):
+            biggest = int(max(self.q[current_state]))
+            # print(biggest)
+            viable = []
+            for i in range(len(self.q[current_state])):
+                if int(self.q[current_state][i]) == biggest:
+                    a = self.actions[i]
+                    d = a['dumbbell']
+                    #i = a['block']
+                    if ((r != d) and (b != d) and (g != d)):
+                        viable.append(i)
+            action = random.choice(viable)
+            act = self.actions[action]
+            robot_db = act['dumbbell']
+            block_id = act['block']
+            print(robot_db, block_id)
+            to_do.append((robot_db, block_id))
+            if robot_db == "red":
+                r = block_id
+            elif robot_db == "green":
+                g = block_id
+            elif robot_db == "blue":
+                b = block_id
+            current_state = next_state_calc(r,g,b)
+            print(current_state)
+        print(to_do)
 
         #green = np.uint8([[[0,255,0 ]]])
         #hsv_green = cv2.cvtColor(green,cv2.COLOR_BGR2HSV)
@@ -236,10 +283,11 @@ class ActionRobotNode(object):
 
     def run(self):
         while (not rospy.is_shutdown()):
-            self.dumbel_rec()
-           # print("switch modes")
-            self.image_rec()
-        rospy.spin()
+            #self.dumbel_rec()
+            #print("switch modes")
+            #self.image_rec()
+            pass
+        #rospy.spin()
 
 if __name__ == '__main__':
     robot = ActionRobotNode()
