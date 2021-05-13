@@ -57,8 +57,6 @@ class ActionRobotNode(object):
         self.my_twist = Twist(linear=Vector3(0, 0, 0),angular=Vector3(0, 0, 0))
         self.robot_movement_pub.publish(self.my_twist)
 
-        self.color = "blue"
-        self.block_id = 1
         self.laser_data = 0.5
         self.holding = 0
         self.w = 0 
@@ -82,16 +80,16 @@ class ActionRobotNode(object):
         ))
 
         current_state = 0
-        to_do = []
+        self.to_do = []
         r = 0
         g = 0
         b = 0
         count = 0
         #while (int(max(self.q[current_state])) > 0):
-        while(count < 3):
+        while(current_state != 39):
             biggest = max(self.q[current_state])
-            print("row" , self.q[current_state])
-            print("biggest", biggest)
+            #print("row" , self.q[current_state])
+            #print("biggest", biggest)
             viable = []
             for i in range(len(self.q[current_state])):
                 if int(self.q[current_state][i]) == biggest:
@@ -104,8 +102,8 @@ class ActionRobotNode(object):
             act = self.actions[action]
             robot_db = act['dumbbell']
             block_id = act['block']
-            print(robot_db, block_id)
-            to_do.append((robot_db, block_id))
+            #print(robot_db, block_id)
+            self.to_do.append((robot_db, block_id))
             if robot_db == "red":
                 r = block_id
             elif robot_db == "green":
@@ -113,10 +111,13 @@ class ActionRobotNode(object):
             elif robot_db == "blue":
                 b = block_id
             current_state = next_state_calc(r,g,b)
-            print("new state" , current_state)
+            #print("new state" , current_state)
             #break
-            count = count + 1
-        print(to_do)
+            #count = count + 1
+        #print(to_do)
+
+        self.count = 0
+        self.color, self.block_id = self.to_do[self.count]
 
         #green = np.uint8([[[0,255,0 ]]])
         #hsv_green = cv2.cvtColor(green,cv2.COLOR_BGR2HSV)
@@ -251,9 +252,9 @@ class ActionRobotNode(object):
                         print("id is twooooo")
                     elif id in threes:
                         id2 = 3
-                    print("id2", id2)
-                    print("block_id", self.block_id)
-                    print("bool?", self.block_id - id2)
+                    #print("id2", id2)
+                    #print("block_id", self.block_id)
+                    #print("bool?", self.block_id - id2)
                     if id2 == self.block_id:
                         print("going forward")
                         #print("half width", self.w/2)
@@ -270,12 +271,11 @@ class ActionRobotNode(object):
                         self.lower_dumbbell()
                         self.holding = 0
                         self.move_backwards()
-                        
                         self.turn_right()
                         self.turn_right()
                         self.move_group_gripper.go(self.open_grip, wait=True)
-                        self.color = "green"
-                        self.block_id = 2
+                        self.count += 1
+                        self.color, self.block_id = self.to_do[self.count]
                         break
                     block_count += 1
                     self.my_twist.angular.z = angular_speed
@@ -288,9 +288,11 @@ class ActionRobotNode(object):
 
     def run(self):
         while (not rospy.is_shutdown()):
-            #self.dumbel_rec()
+            self.dumbel_rec()
             #print("switch modes")
-            #self.image_rec()
+            self.image_rec()
+            if self.count == 3:
+                break
             pass
         #rospy.spin()
 
