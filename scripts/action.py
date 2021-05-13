@@ -71,7 +71,7 @@ class ActionRobotNode(object):
             # Iterate over each row in the csv using reader object
             for row in csv_reader:
                 # row variable is a list that represents a row in csv
-                self.q.append(row)
+                self.q.append(list(map(int, row)))
         
         self.action_matrix = np.loadtxt(path_prefix + "action_matrix.txt")
         colors = ["red", "green", "blue"]
@@ -89,7 +89,7 @@ class ActionRobotNode(object):
         count = 0
         #while (int(max(self.q[current_state])) > 0):
         while(count < 3):
-            biggest = int(max(self.q[current_state]))
+            biggest = max(self.q[current_state])
             print("row" , self.q[current_state])
             print("biggest", biggest)
             viable = []
