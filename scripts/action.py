@@ -146,17 +146,19 @@ class ActionRobotNode(object):
         self.w = w
 
     def dumbel_rec(self):
+        
+        print("dumbell rec", self.color)
 
         if self.holding == 0:
-            #print("here1")
+            print("here1")
             hsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
             # TODO: define the upper and lower bounds for what should be considered 'green'
             if self.color == "green":
                 lower_color= np.array([60, 60, 60])
                 upper_color = np.array([65, 255, 250])
             elif self.color == "red":
-                lower_color = np.array([161, 155, 84])
-                upper_color = np.array([179, 255, 255])
+                lower_color = np.array([0, 155, 84])
+                upper_color = np.array([10, 255, 255])
             else: # "blue"
                 lower_color = np.array([94, 80, 2])
                 upper_color = np.array([126, 255, 255])
@@ -173,7 +175,7 @@ class ActionRobotNode(object):
                 if self.laser_data > 3.5:
                     self.laser_data = 3.5
                 print("lzr", self.laser_data)
-                self.my_twist.linear.x = max (.0075,((self.laser_data - 0.24)*.085))
+                self.my_twist.linear.x = max(.0075,((self.laser_data - 0.24)*.085))
                 self.my_twist.angular.z = (self.w/2 - cx) * 0.001 
                 if (self.laser_data) < 0.24:
                     self.my_twist.linear.x = 0
@@ -190,7 +192,7 @@ class ActionRobotNode(object):
         self.my_twist.linear.x = -.1
         t0 = rospy.Time.now().to_sec()
         time_count = 0
-        while (time_count <= 6): # The turtlebt moves backwards
+        while (time_count <= 8): # The turtlebt moves backwards
             self.robot_movement_pub.publish(self.my_twist)
             t1 = rospy.Time.now().to_sec()
             time_count = t1 -t0
@@ -204,9 +206,12 @@ class ActionRobotNode(object):
         while (current_angle <= right_angle): # The turtlebot turns left until it has made a 90 degree turn
             self.robot_movement_pub.publish(self.my_twist)
             t1 = rospy.Time.now().to_sec()
-            current_angle = angular_speed * (t1-t0) 
+            current_angle = angular_speed * (t1-t0)
+        self.my_twist.angular.z = 0
+        self.robot_movement_pub.publish(self.my_twist) 
 
     def image_rec(self):
+        print("image rec", self.block_id)
         if self.holding == 1:
             #print("id", self.block_id)
 
@@ -218,7 +223,8 @@ class ActionRobotNode(object):
             #self.robot_movement_pub.publish(self.my_twist)
             self.move_backwards()
             self.turn_right()
-            
+            self.my_twist.angular.z = angular_speed
+            self.robot_movement_pub.publish(self.my_twist)
             block_count = 0
             while block_count < 5:
                 if self.laser_data < 3.5: 
@@ -249,7 +255,7 @@ class ActionRobotNode(object):
                         id2 = 1
                     elif id in twos:
                         id2 = 2
-                        print("id is twooooo")
+                        #print("id is twooooo")
                     elif id in threes:
                         id2 = 3
                     #print("id2", id2)
@@ -258,6 +264,8 @@ class ActionRobotNode(object):
                     if id2 == self.block_id:
                         print("going forward")
                         #print("half width", self.w/2)
+                        if self.laser_data > 3.5:
+                            self.laser_data = 3.5
                         while self.laser_data > 1:
                             # self.robot_movement_pub.publish(self.my_twist)
                             print("lzr", self.laser_data)
@@ -268,6 +276,8 @@ class ActionRobotNode(object):
                             # p = self.pipeline.recognize(images)
                             # cx_final,junk_id = self.pipeline_helper(p)
                         self.move_group_arm.go(self.lift_pos, wait=True)
+                        self.my_twist.linear.x = 0
+                        self.robot_movement_pub.publish(self.my_twist)
                         self.lower_dumbbell()
                         self.holding = 0
                         self.move_backwards()
@@ -284,6 +294,8 @@ class ActionRobotNode(object):
                     while self.laser_data < 3.5: 
                         #print(self.laser_data)
                         pass
+            self.my_twist.angular.z = angular_speed
+            self.robot_movement_pub.publish(self.my_twist)
             print("hit three blocks")
 
     def run(self):
@@ -291,9 +303,10 @@ class ActionRobotNode(object):
             self.dumbel_rec()
             #print("switch modes")
             self.image_rec()
+            print("count" , self.count)
             if self.count == 3:
                 break
-            pass
+            rospy.sleep(.001)
         #rospy.spin()
 
 if __name__ == '__main__':
