@@ -109,6 +109,7 @@ class QLearning(object):
         if self.q_count > 500:
             if self.in_a_row > 60:
                 self.converged = True
+                print("Converged")
 
     def test_an_action(self):
         ''' find all viable actions, pick one and publish '''
