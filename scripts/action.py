@@ -86,15 +86,18 @@ class ActionRobotNode(object):
         r = 0
         g = 0
         b = 0
-        while (int(max(self.q[current_state])) > 0):
+        count = 0
+        #while (int(max(self.q[current_state])) > 0):
+        while(count < 3):
             biggest = int(max(self.q[current_state]))
-            # print(biggest)
+            print("row" , self.q[current_state])
+            print("biggest", biggest)
             viable = []
             for i in range(len(self.q[current_state])):
                 if int(self.q[current_state][i]) == biggest:
                     a = self.actions[i]
-                    d = a['dumbbell']
-                    #i = a['block']
+                    d = a['block']
+                    #print(d)
                     if ((r != d) and (b != d) and (g != d)):
                         viable.append(i)
             action = random.choice(viable)
@@ -110,7 +113,9 @@ class ActionRobotNode(object):
             elif robot_db == "blue":
                 b = block_id
             current_state = next_state_calc(r,g,b)
-            print(current_state)
+            print("new state" , current_state)
+            #break
+            count = count + 1
         print(to_do)
 
         #green = np.uint8([[[0,255,0 ]]])
