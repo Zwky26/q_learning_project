@@ -37,4 +37,4 @@ Action and Perception: In the action.py file, we handle the "executing the optim
 
 This is where we will send the actual cmd_vel and arm messages to maneuver the robot, based on the saved q matrix. The overall layout is: we read from the q matrix to determine the action. This action will tell us a color for the dumbbell and a number for the block. We call a method to drive to the dumbbell, which will loop until we reach it. Then, we call another method to pick it up and rotate the arm, so the dumbbell is not blocking the camera (might be optional). We then issue a third method to drive to the block, using the computer vision code from lecture 11. We run the second method in reverse, placing the dumbbell where is should go. One minor addition that might be needed is a helper method that rotates the Turtlebot around until it gets visual of what it is looking for. That is, if something is out of sight, find it.
 
-[gif]: ./scripts/robot_vid.gif
+[gif]: https://github.com/Zwky26/q_learning_project/blob/c93b73215f19d55292b5d7b44ded38ea73f373e6/scripts/robot_vid3.gif
