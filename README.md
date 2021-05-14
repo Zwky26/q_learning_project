@@ -37,4 +37,19 @@ Action and Perception: In the action.py file, we handle the "executing the optim
 
 This is where we will send the actual cmd_vel and arm messages to maneuver the robot, based on the saved q matrix. The overall layout is: we read from the q matrix to determine the action. This action will tell us a color for the dumbbell and a number for the block. We call a method to drive to the dumbbell, which will loop until we reach it. Then, we call another method to pick it up and rotate the arm, so the dumbbell is not blocking the camera (might be optional). We then issue a third method to drive to the block, using the computer vision code from lecture 11. We run the second method in reverse, placing the dumbbell where is should go. One minor addition that might be needed is a helper method that rotates the Turtlebot around until it gets visual of what it is looking for. That is, if something is out of sight, find it.
 
+## Challenges
+
+The implementation of the mechanics of the actions of picking up and putting down the dumbells was incredibly difficult and time consuming. Gazebo was also quite glitchy and needed to be shut down and restarted each time, and we were never able to completely eliminate random errors, like the robot LIDAR occasionally reading infinite values and zooming towards the blocks. We also had a lingering error where the range of values we used for red was on the wrong en of the spectrum, so the robot could only pick it up from one angle, but from another, the lighting was dark enough because of the shadow that it couldnt recognize the red dumbell. Finally, properly implementing the pid to drop off the dumbells at the blocks was a challenge. We could use the coordinates from the OCR pipeline because it didnt update fast enough, so we had to just use LIDAR. But because the angles were all different and the dumbell was being carried on the right side of the robot, placing the dumbell in front of the left most block was a challenge, and we were ultimately unable to get the dumbell in front of the leftmost block. 
+
+## Future Work 
+
+With more time, we would fix the issue of the leftmost block and dumbell, and implement a more effective version of PID than lidar to somehow go to the center of the block. We might have also found a way to direct our robot not towards the first part of the block it sees, but to the center of the block instead. This could have probably been acheived by simply measuring the distance from the ege to center of the block, but it wouldnt have alwways required the same turning adjustment based on the angle of the robot in relation to the block. We would have also liked to make the robot move faster, and improved its accuracy in picking up dumbells. I would say our robot works and picks and drops everything off without dropping the dumbells around 51% of the time, and in future work, we would bring that percentage up. 
+
+
+## Takeaways
+
+1) There is a huge difference between writing the logic of code that is correct and getting it to functionally work with detailed and fine tuned robot tasks. Everything needs to be endlessly tuned based on the actual physics of the robot dynamics
+
+2) Certain pipelines and built in processes have serious limitations. The Keras OCR needed to be fed a range of strings that look like numbers, and the OCR needed several secconds to run the pipeline on each image, creating constraints for PID.  
+
 [gif]: https://github.com/Zwky26/q_learning_project/blob/c93b73215f19d55292b5d7b44ded38ea73f373e6/scripts/robot_vid3.gif

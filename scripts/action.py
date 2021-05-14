@@ -46,7 +46,7 @@ class ActionRobotNode(object):
         self.rest_pos = [0, .7, -.3, -.3] #rest position for the arm
         self.lift_pos = [0, .3, -.8, -.3] #lifting the dumbbell
         self.turn_pos = [1.5, .3, -.8, -.3] #rotate the arm to unblock the camera
-        self.lower_pos = [1.5, .7, -.3, -.3]
+        self.lower_pos = [1.5, .7, -.3, -.3] #
         self.open_grip = [0.010, 0.010] 
         self.close_grip = [0.007, 0.007] 
         self.move_group_arm.go(self.rest_pos, wait=True)
@@ -58,7 +58,7 @@ class ActionRobotNode(object):
         self.robot_movement_pub.publish(self.my_twist)
 
         self.laser_data = 0.5
-        self.holding = 0
+        self.holding = 0 #Dumbell holding boolean variable 
         self.w = 0 
         self.q = []
 
@@ -92,8 +92,7 @@ class ActionRobotNode(object):
                 if int(self.q[current_state][i]) == biggest:
                     a = self.actions[i]
                     d = a['block']
-                    #print(d)
-                    if ((r != d) and (b != d) and (g != d)):
+                    if ((r != d) and (b != d) and (g != d)): #as long as you havent already chosen it 
                         viable.append(i)
             action = random.choice(viable) #if a tie, randomly pick one
             act = self.actions[action]
@@ -108,7 +107,6 @@ class ActionRobotNode(object):
             elif robot_db == "blue":
                 b = block_id
             current_state = next_state_calc(r,g,b)
-            
 
         self.count = 0
         self.color, self.block_id = self.to_do[self.count]
@@ -122,22 +120,20 @@ class ActionRobotNode(object):
         self.move_group_gripper.go(self.open_grip, wait=True)
 
 
-    def object_identify(self,msg):
+    def object_identify(self,msg): #LIDAR callback function
         '''saves the distance of object directly in front'''
         self.laser_data = msg.ranges[0]
 
-    def image_callback(self,msg):
+    def image_callback(self,msg): # Image call back function 
         ''' saves snapshot taken'''
         self.image = self.bridge.imgmsg_to_cv2(msg,desired_encoding='bgr8')
         h, w, d = self.image.shape
         self.w = w
 
-    def dumbel_rec(self):
+    def dumbel_rec(self): #This function, if the robot is not holding a dumbell, goes and picks up the dumbell
         
-        print("dumbell rec", self.color)
-
         if self.holding == 0:
-            print("here1")
+            
             hsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
             if self.color == "green":
                 lower_color= np.array([60, 60, 60])
@@ -151,14 +147,13 @@ class ActionRobotNode(object):
             mask = cv2.inRange(hsv, lower_color, upper_color)
             M = cv2.moments(mask)
                 
-            if M['m00'] > 0: #we can see pixels of that color
+            if M['m00'] > 0: #If we can see pixels of that color
                 # center of the pixels in the image
                 cx = int(M['m10']/M['m00'])
                 cy = int(M['m01']/M['m00'])
-                #print("cx and cy:", cx, cy)
-                if self.laser_data > 3.5:
+                
+                if self.laser_data > 3.5: #get rid of infinite values
                     self.laser_data = 3.5
-                print("lzr", self.laser_data)
                 self.my_twist.linear.x = max(.0075,((self.laser_data - 0.24)*.085))
                 self.my_twist.angular.z = (self.w/2 - cx) * 0.001 
                 if (self.laser_data) < 0.24: #close enough to grab
@@ -177,7 +172,7 @@ class ActionRobotNode(object):
         self.my_twist.linear.x = -.1
         t0 = rospy.Time.now().to_sec()
         time_count = 0
-        while (time_count <= 8): # The turtlebt moves backwards
+        while (time_count <= 8): # The turtlebot moves backwards
             self.robot_movement_pub.publish(self.my_twist)
             t1 = rospy.Time.now().to_sec()
             time_count = t1 -t0
@@ -199,7 +194,7 @@ class ActionRobotNode(object):
     def image_rec(self):
         print("image rec", self.block_id)
         if self.holding == 1:
-            #keras can misread certain symbols. This covers our bases
+            #keras can misread certain symbols. This covers our bases.
             threes = ["3","s","e","5"]
             twos = ["2"]
             ones = ["1","l", "1l"]
@@ -211,7 +206,7 @@ class ActionRobotNode(object):
             self.my_twist.angular.z = angular_speed
             self.robot_movement_pub.publish(self.my_twist)
             block_count = 0
-            while block_count < 5: #scan the blocks to recognize their labels
+            while block_count < 5: #scan the blocks to recognize their labels. 5 is a buffer value since sometimes the keras glitches.
                 if self.laser_data < 3.5: 
                     self.my_twist.angular.z = 0
                     self.robot_movement_pub.publish(self.my_twist)
@@ -222,39 +217,30 @@ class ActionRobotNode(object):
                     id2 = 0
                     left = 1000
                     cx_dict = {}
-                    for b,a in p[0]:
-                        cx = 0
+                    for b,a in p[0]: #Select the right most image in the image field  
+                        #cx = 0
                         for i in a:
                             if i[0] < left: 
                                 id = b
                                 left = i[0]
                             print(i) 
-                            cx += i[0]
+                            #cx += i[0]
                     print("prediction" , id)
                     if id in ones:
                         id2 = 1
                     elif id in twos:
                         id2 = 2
-                        #print("id is twooooo")
+                        
                     elif id in threes:
                         id2 = 3
-                    #print("id2", id2)
-                    #print("block_id", self.block_id)
-                    #print("bool?", self.block_id - id2)
-                    if id2 == self.block_id:
-                        print("going forward")
-                        #print("half width", self.w/2)
+                    
+                    if id2 == self.block_id: #If the block is the one we are looking for, then drive towards it              
                         if self.laser_data > 3.5:
                             self.laser_data = 3.5
-                        while self.laser_data > 1:
-                            # self.robot_movement_pub.publish(self.my_twist)
+                        while self.laser_data > 1: #While not close to block 
                             print("lzr", self.laser_data)
                             self.my_twist.linear.x = max(.05, (self.laser_data - 0.5)*.08)
                             self.robot_movement_pub.publish(self.my_twist)
-                            # self.my_twist.angular.z = (self.w/2 - cx_final) * 0.005 
-                            # images = [self.image]
-                            # p = self.pipeline.recognize(images)
-                            # cx_final,junk_id = self.pipeline_helper(p)
                         self.move_group_arm.go(self.lift_pos, wait=True)
                         self.my_twist.linear.x = 0
                         self.robot_movement_pub.publish(self.my_twist)
@@ -265,31 +251,27 @@ class ActionRobotNode(object):
                         self.turn_right()
                         self.move_group_gripper.go(self.open_grip, wait=True)
                         self.count += 1
-                        self.color, self.block_id = self.to_do[self.count]
+                        self.color, self.block_id = self.to_do[self.count] # Move onto next block 
                         break
                     block_count += 1
                     self.my_twist.angular.z = angular_speed
                     self.robot_movement_pub.publish(self.my_twist)
-                    #print(self.laser_data)
-                    while self.laser_data < 3.5: 
-                        #print(self.laser_data)
+                    
+                    while self.laser_data < 3.5: # turn till past the edge of the block
                         pass
             self.my_twist.angular.z = angular_speed
             self.robot_movement_pub.publish(self.my_twist)
-            print("hit three blocks")
+            
 
     def run(self):
         ''' loops, getting a dumbbell and putting it down, until all are placed'''
         while (not rospy.is_shutdown()):
             self.dumbel_rec()
-            #print("switch modes")
             self.image_rec()
-            print("count" , self.count)
-            if self.count == 3:
+            if self.count == 3: #The program stops once all three dumbells have been placed
                 break
             rospy.sleep(.001)
-        #rospy.spin()
-
+        
 if __name__ == '__main__':
     robot = ActionRobotNode()
     robot.run()
